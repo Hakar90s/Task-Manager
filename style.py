@@ -1,5 +1,3 @@
-# style.py
-
 import streamlit as st
 
 def apply_styles():
@@ -11,7 +9,10 @@ def apply_styles():
       border-radius: 0 0 10px 10px;
       margin-bottom: 1rem;
     }
-    .header-bar h1 { color: #ecf0f1; margin: 0; }
+    .header-bar h1 {
+      color: #ecf0f1;
+      margin: 0;
+    }
     .task-card {
       background: #fff;
       border: 1px solid #e1e1e1;
@@ -30,12 +31,26 @@ def apply_styles():
       background: none;
       border: none;
       cursor: pointer;
-      font-size: 16px;
       position: absolute;
       top: 8px;
+      padding: 0;
     }
-    .icon-move { right: 32px; }
-    .icon-delete { right: 8px; }
-    .add-new-btn { margin-bottom: 12px; }
+    .icon-move {
+      right: 32px;
+      font-size: 14px;
+    }
+    .icon-delete {
+      right: 8px;
+      font-size: 14px;
+    }
+    /* shrink the move-select dropdown */
+    .task-card select {
+      width: 60px !important;
+      font-size: 14px;
+      padding: 2px 4px;
+    }
+    .add-new-btn {
+      margin-bottom: 12px;
+    }
     </style>
     """, unsafe_allow_html=True)
