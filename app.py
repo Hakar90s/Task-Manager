@@ -9,7 +9,7 @@ st.set_page_config(page_title="🗂️ Task Manager Pro", layout="wide")
 apply_styles()
 render_header()
 
-# initialize placeholders
+# Initialize new‐box lists
 for tab in TABS:
     st.session_state.setdefault(f"new_boxes_{tab}", [])
 
