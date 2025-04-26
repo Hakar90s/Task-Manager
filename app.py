@@ -51,9 +51,7 @@ st.markdown('<div class="header-bar"><h1>🗂️ Task Manager Pro</h1></div>', u
 
 TABS = ["Tasks", "In Progress", "Done", "Brainstorm"]
 
-
 # --- 1) DRAG & DROP SETUP ---
-# Build initial containers from the DB
 original_positions = {}
 containers = []
 for tab in TABS:
@@ -63,27 +61,22 @@ for tab in TABS:
         original_positions[str(tid)] = tab
     containers.append({"header": tab, "items": ids})
 
-# Let user drag between columns
 sorted_containers = sort_items(
     containers,
     multi_containers=True,
     key="kanban-board"
 )
 
-# Persist moves back to the DB
 for cont in sorted_containers:
     new_tab = cont["header"]
     for tid in cont["items"]:
         if original_positions.get(tid) != new_tab:
             handle.move_task(int(tid), new_tab)
             original_positions[tid] = new_tab
-# no manual rerun needed—Streamlit auto-refreshes on drag end
-
 
 st.markdown("---")
 
-
-# --- 2) RENDER ALL COLUMNS WITH AUTO-SAVE & ICONS ---
+# --- 2) RENDER ALL COLUMNS ---
 cols = st.columns(len(TABS))
 for col, tab in zip(cols, TABS):
     with col:
@@ -91,27 +84,22 @@ for col, tab in zip(cols, TABS):
 
         # EXISTING TASKS
         for pos, (tid, content) in enumerate(handle.fetch_tasks_by_tab(tab), start=1):
-            # adjust height to content
             lines = content.count("\n") + 1
             height = max(80, min(lines * 24, 300))
 
-            # card wrapper
             st.markdown('<div class="task-card">', unsafe_allow_html=True)
 
-            # auto-saving textarea
-            def make_autosave(tid):
-                return lambda: handle.update_task(tid, st.session_state[f"edit_{tid}"])
-
+            # <--- here: label="" instead of label=None --->
             st.text_area(
-                label=None,
+                label="",
                 value=content,
                 key=f"edit_{tid}",
                 height=height,
-                on_change=make_autosave(tid),
+                on_change=lambda t=tid: handle.update_task(t, st.session_state[f"edit_{t}"]),
                 label_visibility="collapsed"
             )
 
-            # move icon (just a visual hint; actual move is via drag)
+            # drag icon hint
             st.markdown(f"""
               <button class="icon-btn icon-move" title="Drag to move">⬍</button>
             """, unsafe_allow_html=True)
@@ -126,14 +114,9 @@ for col, tab in zip(cols, TABS):
         if f"new_boxes_{tab}" not in st.session_state:
             st.session_state[f"new_boxes_{tab}"] = []
 
-        # Add New
-        st.button(
-            "➕ Add New",
-            key=f"add_new_{tab}",
-            on_click=lambda t=tab: st.session_state[f"new_boxes_{t}"].append("")
-        )
+        if st.button("➕ Add New", key=f"add_new_{tab}", on_click=lambda t=tab: st.session_state[f"new_boxes_{t}"].append("")):
+            pass
 
-        # render each placeholder
         boxes = st.session_state[f"new_boxes_{tab}"]
         for idx, val in enumerate(boxes):
             st.markdown('<div class="task-card">', unsafe_allow_html=True)
@@ -148,8 +131,9 @@ for col, tab in zip(cols, TABS):
             def make_new_del(tab, i):
                 return lambda: boxes.pop(i)
 
+            # <--- here too: label="" --->
             st.text_area(
-                label=None,
+                label="",
                 value=val,
                 key=f"new_{tab}_{idx}",
                 height=80,
