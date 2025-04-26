@@ -1,5 +1,3 @@
-# callbacks.py
-
 import streamlit as st
 import handle
 from constants import TABS
@@ -17,22 +15,28 @@ def delete_task(tid):
     handle.delete_task(tid)
 
 def add_placeholder(tab):
-    """Add an empty new‐card placeholder."""
+    """Add an empty new‐card placeholder on first click."""
     key = f"new_boxes_{tab}"
     idx = len(st.session_state.setdefault(key, []))
+    # clear any stray input state
     st.session_state.pop(f"new_{tab}_{idx}", None)
     st.session_state[key].append("")
 
 def save_new(tab, idx):
     """Persist a new placeholder (if non‐empty) and remove it."""
-    key = f"new_{tab}_{idx}"
-    text = st.session_state.get(key, "").strip()
+    text_key = f"new_{tab}_{idx}"
+    text = st.session_state.get(text_key, "").strip()
     if text:
         handle.add_task(text, tab)
-    st.session_state[f"new_boxes_{tab}"].pop(idx)
-    st.session_state.pop(key, None)
+    # safely remove placeholder
+    boxes = st.session_state.get(f"new_boxes_{tab}", [])
+    if idx < len(boxes):
+        boxes.pop(idx)
+    st.session_state.pop(text_key, None)
 
 def delete_new(tab, idx):
     """Discard a new‐card placeholder."""
-    st.session_state[f"new_boxes_{tab}"].pop(idx)
+    boxes = st.session_state.get(f"new_boxes_{tab}", [])
+    if idx < len(boxes):
+        boxes.pop(idx)
     st.session_state.pop(f"new_{tab}_{idx}", None)
