@@ -6,19 +6,14 @@ def auto_save(tid):
     """Save edited text immediately."""
     handle.update_task(tid, st.session_state[f"edit_{tid}"])
 
-def move_task(tid, new_tab):
-    """Move a task."""
-    handle.move_task(tid, new_tab)
-
 def delete_task(tid):
     """Delete a task."""
     handle.delete_task(tid)
 
 def add_placeholder(tab):
-    """Add an empty new‐card placeholder on first click."""
+    """Add an empty new‐card placeholder."""
     key = f"new_boxes_{tab}"
     idx = len(st.session_state.setdefault(key, []))
-    # clear any stray input state
     st.session_state.pop(f"new_{tab}_{idx}", None)
     st.session_state[key].append("")
 
@@ -28,7 +23,6 @@ def save_new(tab, idx):
     text = st.session_state.get(text_key, "").strip()
     if text:
         handle.add_task(text, tab)
-    # safely remove placeholder
     boxes = st.session_state.get(f"new_boxes_{tab}", [])
     if idx < len(boxes):
         boxes.pop(idx)
@@ -40,3 +34,15 @@ def delete_new(tab, idx):
     if idx < len(boxes):
         boxes.pop(idx)
     st.session_state.pop(f"new_{tab}_{idx}", None)
+
+def toggle_move_selector(tid):
+    """Show the move-dropdown for a given task."""
+    st.session_state[f"show_move_{tid}"] = True
+
+def confirm_move(tid):
+    """Move the task to the selected tab, then hide the selector."""
+    sel_key = f"move_sel_{tid}"
+    new_tab = st.session_state.get(sel_key)
+    if new_tab:
+        handle.move_task(tid, new_tab)
+    st.session_state[f"show_move_{tid}"] = False
