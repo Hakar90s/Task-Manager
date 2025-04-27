@@ -14,41 +14,71 @@ def calc_height(text):
     return max(80, min(lines * 24, 300))
 
 def render_existing_card(tab, tid, content):
-    """Draw a saved task with a small move‐dropdown at top‐left and delete icon at top‐right."""
+    """
+    Draw a saved task with:
+    - small delete icon at top-left
+    - small move icon at top-right that toggles a dropdown
+    - auto-saving textarea
+    """
     st.markdown('<div class="task-card">', unsafe_allow_html=True)
 
-    # Top row: move‐select | delete icon
-    col_move, col_del, col_text = st.columns([1,1,8], gap="small")
-    with col_move:
-        options = [t for t in TABS if t != tab]
-        def _on_move(tid=tid):
-            new_tab = st.session_state[f"move_sel_{tid}"]
-            callbacks.move_task(tid, new_tab)
-        st.selectbox(
-            label="🔀",
-            options=options,
-            key=f"move_sel_{tid}",
-            on_change=_on_move,
-            label_visibility="visible"
-        )
+    # Initialize the show_move flag
+    flag_key = f"show_move_{tid}"
+    show = st.session_state.setdefault(flag_key, False)
+
+    # Top row: delete icon on left, move icon on right
+    col_del, col_spacer, col_move = st.columns([1,8,1], gap="small")
     with col_del:
-        st.button(
+        if st.button(
             "❌",
             key=f"del_{tid}",
             on_click=callbacks.delete_task,
             args=(tid,),
-            use_container_width=True
-        )
-    with col_text:
-        st.text_area(
-            label="",
-            value=content,
-            key=f"edit_{tid}",
-            height=calc_height(content),
-            on_change=callbacks.auto_save,
-            args=(tid,),
-            label_visibility="collapsed"
-        )
+            help="Delete this card",
+            use_container_width=True,
+        ):
+            pass
+    with col_move:
+        if not show:
+            # show the dropdown icon
+            if st.button(
+                "⋯",
+                key=f"show_move_btn_{tid}",
+                on_click=callbacks.toggle_move_selector,
+                args=(tid,),
+                help="Move this card",
+                use_container_width=True,
+            ):
+                pass
+        else:
+            # show the selectbox + confirm icon
+            sel_key = f"move_sel_{tid}"
+            st.selectbox(
+                label="",
+                options=[t for t in TABS if t != tab],
+                key=sel_key,
+                label_visibility="collapsed",
+            )
+            if st.button(
+                "➤",
+                key=f"confirm_move_{tid}",
+                on_click=callbacks.confirm_move,
+                args=(tid,),
+                help="Confirm move",
+                use_container_width=True,
+            ):
+                pass
+
+    # Body: auto-saving textarea
+    st.text_area(
+        label="",
+        value=content,
+        key=f"edit_{tid}",
+        height=calc_height(content),
+        on_change=callbacks.auto_save,
+        args=(tid,),
+        label_visibility="collapsed",
+    )
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -65,39 +95,42 @@ def render_new_card(tab, idx):
         key=f"new_{tab}_{idx}",
         height=80,
         on_change=_on_new,
-        label_visibility="collapsed"
+        label_visibility="collapsed",
     )
 
-    # small delete icon below
+    # delete icon below
     if st.button(
         "❌",
         key=f"new_del_{tab}_{idx}",
         on_click=callbacks.delete_new,
         args=(tab, idx),
-        use_container_width=True
+        help="Discard this new card",
+        use_container_width=True,
     ):
         pass
 
     st.markdown('</div>', unsafe_allow_html=True)
 
 def render_board():
-    """Lay out the four columns with cards and the Add New button."""
+    """Lay out all columns with their cards and the Add New button."""
     cols = st.columns(len(TABS), gap="small")
     for col, tab in zip(cols, TABS):
         with col:
             st.subheader(tab)
+
             # existing tasks
             for tid, content in handle.fetch_tasks_by_tab(tab):
                 render_existing_card(tab, tid, content)
 
-            # add new on first click
-            st.button(
+            # add new
+            if st.button(
                 "➕ Add New",
                 key=f"add_new_{tab}",
                 on_click=callbacks.add_placeholder,
                 args=(tab,),
-                use_container_width=True
-            )
+                use_container_width=True,
+            ):
+                pass
 
             # new placeholders
             for idx, _ in enumerate(st.session_state.get(f"new_boxes_{tab}", [])):
