@@ -14,17 +14,38 @@ def calc_height(content):
     return max(80, min(lines * 24, 300))
 
 def render_existing_card(tab, tid, content):
+    """Draw a saved task with delete and move controls."""
     st.markdown('<div class="task-card">', unsafe_allow_html=True)
 
-    # Top row: delete | spacer | move-dropdown + confirm
+    # Top row: delete icon (left) | spacer | move controls (right)
     c_del, c_spacer, c_move = st.columns([1,6,2], gap="small")
     with c_del:
-        st.button("❌", key=f"del_{tid}", on_click=callbacks.delete_task, args=(tid,), use_container_width=True)
+        st.button(
+            "❌",
+            key=f"del_{tid}",
+            on_click=callbacks.delete_task,
+            args=(tid,),
+            use_container_width=True,
+            help="Delete this card",
+        )
     with c_move:
         sel_key = f"move_sel_{tid}"
-        st.selectbox("", options=[t for t in TABS if t != tab], key=sel_key, label_visibility="collapsed")
-        st.button("🔀", key=f"move_btn_{tid}", on_click=callbacks.move_existing, args=(tid, st.session_state[sel_key]), use_container_width=True)
+        st.selectbox(
+            "", 
+            options=[t for t in TABS if t != tab],
+            key=sel_key,
+            label_visibility="collapsed",
+        )
+        st.button(
+            "🔀",
+            key=f"move_btn_{tid}",
+            on_click=callbacks.move_existing,
+            args=(tid, st.session_state[sel_key]),
+            use_container_width=True,
+            help="Move to selected tab",
+        )
 
+    # Body: auto-saving textarea
     st.text_area(
         label="",
         value=content,
@@ -37,39 +58,37 @@ def render_existing_card(tab, tid, content):
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-def render_new_card(tab, idx):
-    st.markdown('<div class="task-card">', unsafe_allow_html=True)
-
-    # Top row: delete | spacer | move-dropdown + confirm
-    c_del, c_spacer, c_move = st.columns([1,6,2], gap="small")
-    with c_del:
-        st.button("❌", key=f"new_del_{tab}_{idx}", on_click=callbacks.delete_new, args=(tab, idx), use_container_width=True)
-    with c_move:
-        sel_key = f"move_new_sel_{tab}_{idx}"
-        st.selectbox("", options=[t for t in TABS if t != tab], key=sel_key, label_visibility="collapsed")
-        st.button("🔀", key=f"move_new_btn_{tab}_{idx}", on_click=callbacks.move_new, args=(tab, idx, st.session_state[sel_key]), use_container_width=True)
-
-    st.text_area(
-        label="",
-        value=st.session_state.get(f"new_{tab}_{idx}", ""),
-        key=f"new_{tab}_{idx}",
-        height=80,
-        on_change=lambda t=tab, i=idx: callbacks.save_new(t, i),
-        label_visibility="collapsed",
-    )
-
-    st.markdown('</div>', unsafe_allow_html=True)
-
 def render_board():
+    """Lay out columns with their cards and the Add New input/button."""
     cols = st.columns(len(TABS), gap="small")
     for col, tab in zip(cols, TABS):
         with col:
             st.subheader(tab)
 
-            for tid, content in handle.fetch_tasks_by_tab(tab):
+            # Fetch existing cards
+            cards = handle.fetch_tasks_by_tab(tab)
+            for tid, content in cards:
                 render_existing_card(tab, tid, content)
 
-            st.button("➕ Add New", key=f"add_new_{tab}", on_click=callbacks.add_placeholder, args=(tab,), use_container_width=True)
-
-            for idx, _ in enumerate(st.session_state.get(f"new_boxes_{tab}", [])):
-                render_new_card(tab, idx)
+            # Add New input only if under 20 cards
+            if len(cards) < 20:
+                input_key = f"new_input_{tab}"
+                # Initialize session state for the input if needed
+                st.session_state.setdefault(input_key, "")
+                st.text_area(
+                    label="",
+                    key=input_key,
+                    placeholder="Enter new task…",
+                    height=80,
+                    label_visibility="collapsed",
+                )
+                st.button(
+                    "➕ Add New",
+                    key=f"add_new_{tab}",
+                    on_click=callbacks.add_new_confirm,
+                    args=(tab,),
+                    use_container_width=True,
+                    help="Save new card and prepare for next",
+                )
+            else:
+                st.warning("🔒 20-card limit reached in this column.")
