@@ -7,8 +7,9 @@ def auto_save(tid):
     handle.update_task(tid, st.session_state[f"edit_{tid}"])
 
 def delete_task(tid):
-    """Delete a task."""
+    """Delete a task and refresh."""
     handle.delete_task(tid)
+    st.experimental_rerun()
 
 def add_placeholder(tab):
     """Add an empty new‐card placeholder."""
@@ -27,6 +28,7 @@ def save_new(tab, idx):
     if idx < len(boxes):
         boxes.pop(idx)
     st.session_state.pop(text_key, None)
+    st.experimental_rerun()
 
 def delete_new(tab, idx):
     """Discard a new‐card placeholder."""
@@ -34,15 +36,19 @@ def delete_new(tab, idx):
     if idx < len(boxes):
         boxes.pop(idx)
     st.session_state.pop(f"new_{tab}_{idx}", None)
+    st.experimental_rerun()
 
 def toggle_move_selector(tid):
-    """Show the move-dropdown for a given task."""
-    st.session_state[f"show_move_{tid}"] = True
+    """Toggle the move‐dropdown visibility for this task."""
+    key = f"show_move_{tid}"
+    st.session_state[key] = not st.session_state.get(key, False)
 
-def confirm_move(tid):
-    """Move the task to the selected tab, then hide the selector."""
+def perform_move(tid):
+    """Move the task to the selected tab and refresh."""
     sel_key = f"move_sel_{tid}"
     new_tab = st.session_state.get(sel_key)
     if new_tab:
         handle.move_task(tid, new_tab)
+    # hide the selector and refresh
     st.session_state[f"show_move_{tid}"] = False
+    st.experimental_rerun()
