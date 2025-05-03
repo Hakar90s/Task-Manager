@@ -1,67 +1,59 @@
+
+# handle.py
 import psycopg2
 import streamlit as st
+from constants import TABS
+
+# Map friendly tab names → (table_name, column_name)
+TAB_MAP = {
+    "Tasks": ("task", "task"),
+    "In Progress": ("in_progress", "in_progress"),
+    "Done": ("done", "done"),
+    "Brainstorm": ("brainstorm", "brainstorm"),
+}
 
 def get_connection():
-    """Return a new connection to the Neon Postgres database."""
     return psycopg2.connect(st.secrets["postgres"]["connection_string"])
 
+# ──────────────────────────────────────────────
 def fetch_tasks_by_tab(tab_name):
-    """Fetch (id, content) for all tasks in the given tab."""
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute(
-        "SELECT id, content FROM tasks WHERE tab = %s ORDER BY created_at ASC",
-        (tab_name,)
-    )
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
-    return rows
+    table, col = TAB_MAP[tab_name]
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute(f"SELECT id, {col} FROM {table} ORDER BY id ASC")
+        return cur.fetchall()
 
 def add_task(content, tab_name):
-    """Insert a new task into the specified tab."""
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute(
-        "INSERT INTO tasks (content, tab) VALUES (%s, %s)",
-        (content, tab_name)
-    )
-    conn.commit()
-    cur.close()
-    conn.close()
+    table, col = TAB_MAP[tab_name]
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute(f"INSERT INTO {table} ({col}) VALUES (%s)", (content,))
+        conn.commit()
 
-def move_task(task_id, new_tab):
-    """Move an existing task to another tab."""
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute(
-        "UPDATE tasks SET tab = %s WHERE id = %s",
-        (new_tab, task_id)
-    )
-    conn.commit()
-    cur.close()
-    conn.close()
+def delete_task(tab_name, task_id):
+    table, _ = TAB_MAP[tab_name]
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute(f"DELETE FROM {table} WHERE id = %s", (task_id,))
+        conn.commit()
 
-def update_task(task_id, new_content):
-    """Update the text of an existing task."""
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute(
-        "UPDATE tasks SET content = %s WHERE id = %s",
-        (new_content, task_id)
-    )
-    conn.commit()
-    cur.close()
-    conn.close()
+def update_task(tab_name, task_id, new_content):
+    table, col = TAB_MAP[tab_name]
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute(f"UPDATE {table} SET {col} = %s WHERE id = %s",
+                    (new_content, task_id))
+        conn.commit()
 
-def delete_task(task_id):
-    """Delete a task from the database."""
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute(
-        "DELETE FROM tasks WHERE id = %s",
-        (task_id,)
-    )
-    conn.commit()
-    cur.close()
-    conn.close()
+def move_task(current_tab, task_id, content, direction):
+    """
+    Copy the task to the next/previous table, then delete it from the current one.
+    """
+    tabs = list(TABS)
+    idx = tabs.index(current_tab)
+    new_idx = idx + (1 if direction == "forward" else -1)
+
+    if not (0 <= new_idx < len(tabs)):
+        return  # out of bounds, nothing to do
+
+    new_tab = tabs[new_idx]
+    # 1) create in new table
+    add_task(content, new_tab)
+    # 2) delete from current table
+    delete_task(current_tab, task_id)
