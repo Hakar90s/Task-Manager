@@ -1,4 +1,3 @@
-
 import streamlit as st
 from style import apply_styles
 from ui import render_header, render_board
