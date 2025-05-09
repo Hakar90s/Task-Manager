@@ -26,11 +26,11 @@ def render_existing_card(tab, tid, content):
     
     st.markdown(f'<div class="task-card" id="task-{tid}">', unsafe_allow_html=True)
     
-    # Text area for content
+    # Text area for content with a unique key including tab and tid
     st.text_area(
         label="",
         value=content,
-        key=f"edit_{tid}",
+        key=f"edit_{tab}_{tid}",
         height=calc_height(content),
         on_change=callbacks.auto_save,
         args=(tab, tid),
@@ -47,7 +47,7 @@ def render_existing_card(tab, tid, content):
                 "⬅️",
                 key=f"back_{tab}_{tid}",
                 on_click=callbacks.move_card,
-                args=(tab, tid, st.session_state.get(f"edit_{tid}", ""), "backward"),
+                args=(tab, tid, st.session_state.get(f"edit_{tab}_{tid}", ""), "backward"),
                 use_container_width=True,
                 help=f"Move to {TABS[tab_index - 1]}",
             )
@@ -59,7 +59,7 @@ def render_existing_card(tab, tid, content):
                 "➡️",
                 key=f"fwd_{tab}_{tid}",
                 on_click=callbacks.move_card,
-                args=(tab, tid, st.session_state.get(f"edit_{tid}", ""), "forward"),
+                args=(tab, tid, st.session_state.get(f"edit_{tab}_{tid}", ""), "forward"),
                 use_container_width=True,
                 help=f"Move to {TABS[tab_index + 1]}",
             )
@@ -83,7 +83,7 @@ def render_placeholder(tab, box_id):
     
     st.markdown('<div class="task-card placeholder">', unsafe_allow_html=True)
     
-    # Text area for content
+    # Text area for new task with a unique key
     st.text_area(
         label="",
         key=f"new_box_{tab}_{box_id}",
@@ -94,7 +94,7 @@ def render_placeholder(tab, box_id):
         label_visibility="collapsed",
     )
     
-    # Action buttons row
+    # Action buttons row for placeholder
     cols = st.columns([1, 1, 2])
     
     # Move backward button
@@ -121,7 +121,7 @@ def render_placeholder(tab, box_id):
                 help=f"Move to {TABS[tab_index + 1]}",
             )
     
-    # Delete placeholder
+    # Delete placeholder button
     with cols[2]:
         st.button(
             "🗑️ Discard",
