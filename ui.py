@@ -4,16 +4,6 @@ import callbacks
 from constants import TABS
 
 def render_header():
-    st.markdown(
-        """
-        <div class="header-container">
-            <div class="header-content">
-                <div class="app-icon">🗂️</div>
-                <h1>Task Manager Pro</h1>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
     )
 
 def calc_height(content):
@@ -26,11 +16,11 @@ def render_existing_card(tab, tid, content):
     
     st.markdown(f'<div class="task-card" id="task-{tid}">', unsafe_allow_html=True)
     
-    # Text area for content with a unique key including tab and tid
+    # Text area for content
     st.text_area(
         label="",
         value=content,
-        key=f"edit_{tab}_{tid}",
+        key=f"edit_{tid}",
         height=calc_height(content),
         on_change=callbacks.auto_save,
         args=(tab, tid),
@@ -47,7 +37,7 @@ def render_existing_card(tab, tid, content):
                 "⬅️",
                 key=f"back_{tab}_{tid}",
                 on_click=callbacks.move_card,
-                args=(tab, tid, st.session_state.get(f"edit_{tab}_{tid}", ""), "backward"),
+                args=(tab, tid, st.session_state.get(f"edit_{tid}", ""), "backward"),
                 use_container_width=True,
                 help=f"Move to {TABS[tab_index - 1]}",
             )
@@ -59,7 +49,7 @@ def render_existing_card(tab, tid, content):
                 "➡️",
                 key=f"fwd_{tab}_{tid}",
                 on_click=callbacks.move_card,
-                args=(tab, tid, st.session_state.get(f"edit_{tab}_{tid}", ""), "forward"),
+                args=(tab, tid, st.session_state.get(f"edit_{tid}", ""), "forward"),
                 use_container_width=True,
                 help=f"Move to {TABS[tab_index + 1]}",
             )
@@ -83,7 +73,7 @@ def render_placeholder(tab, box_id):
     
     st.markdown('<div class="task-card placeholder">', unsafe_allow_html=True)
     
-    # Text area for new task with a unique key
+    # Text area for content
     st.text_area(
         label="",
         key=f"new_box_{tab}_{box_id}",
@@ -94,7 +84,7 @@ def render_placeholder(tab, box_id):
         label_visibility="collapsed",
     )
     
-    # Action buttons row for placeholder
+    # Action buttons row
     cols = st.columns([1, 1, 2])
     
     # Move backward button
@@ -121,7 +111,7 @@ def render_placeholder(tab, box_id):
                 help=f"Move to {TABS[tab_index + 1]}",
             )
     
-    # Delete placeholder button
+    # Delete placeholder
     with cols[2]:
         st.button(
             "🗑️ Discard",
