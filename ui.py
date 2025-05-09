@@ -4,6 +4,16 @@ import callbacks
 from constants import TABS
 
 def render_header():
+    st.markdown(
+        """
+        <div class="header-container">
+            <div class="header-content">
+                <div class="app-icon">🗂️</div>
+                <h1>Task Manager Pro</h1>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
 def calc_height(content):
