@@ -22,20 +22,18 @@ def calc_height(content):
 
 def render_existing_card(tab, tid, content):
     tab_index = TABS.index(tab)
-    
+    key = f"edit_{tab}_{tid}"  # ✅ UNIQUE key per tab/task ID
+
     st.markdown(f'<div class="task-card" id="task-{tid}">', unsafe_allow_html=True)
-    
-    # Ensure unique key by including tab
-    key = f"edit_{tab}_{tid}"
 
     st.text_area(
-        label="",
+        label="Task Content",                   # ✅ Non-empty label
         value=content,
         key=key,
         height=calc_height(content),
         on_change=callbacks.auto_save,
         args=(tab, tid),
-        label_visibility="collapsed",
+        label_visibility="collapsed",           # ✅ Hide label visually
     )
 
     cols = st.columns([1, 1, 2])
@@ -79,7 +77,7 @@ def render_placeholder(tab, box_id):
     st.markdown('<div class="task-card placeholder">', unsafe_allow_html=True)
 
     st.text_area(
-        label="",
+        label="New Task Placeholder",  # ✅ For accessibility
         key=f"new_box_{tab}_{box_id}",
         placeholder="Enter new task…",
         height=calc_height(""),
